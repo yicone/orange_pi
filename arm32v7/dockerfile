@@ -1,6 +1,91 @@
 # Debian Jessie debootstrap from 2017-02-27
 # https://github.com/docker-library/official-images/commit/aa5973d0c918c70c035ec0746b8acaec3a4d7777
-FROM debian@sha256:52af198afd8c264f1035206ca66a5c48e602afb32dc912ebf9e9478134601ec4
+FROM arm32v7/python:3
+
+USER root
+
+# Install all OS dependencies for notebook server that starts but lacks all
+# features (e.g., download as all possible file formats)
+ENV DEBIAN_FRONTEND noninteractive
+RUN REPO=http://cdn-fastly.deb.debian.org \
+ && echo "deb $REPO/debian jessie main\ndeb $REPO/debian-security jessie/updates main" > /etc/apt/sources.list \
+ && apt-get update && apt-get -yq dist-upgrade \
+ && apt-get install -yq --no-install-recommends \
+    wget \
+    bzip2 \
+    ca-certificates \
+    sudo \
+    locales \
+    fonts-liberation \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
+    locale-gen
+
+# Install Tini
+RUN curl -L https://github.com/krallin/tini/releases/download/v0.15.0/tini > tini && \
+    echo "5e92b8d11dae337be0a929d0f8a737a84cebe35959503e4c42acbe76c4d69190 *tini" | sha256sum -c - && \
+    mv tini /usr/local/bin/tini && \
+    chmod +x /usr/local/bin/tini
+
+# Configure environment
+ENV SHELL /bin/bash
+ENV NB_USER jovyan
+ENV NB_UID 1000
+ENV HOME /home/$NB_USER
+ENV LC_ALL en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
+
+USER $NB_USER
+
+# Setup work directory for backward-compatibility
+RUN mkdir /home/$NB_USER/work
+
+RUN pip3 install --upgrade pip
+RUN pip3 install jupyter
+
+VOLUME /notebooks
+WORKDIR /notebooks
+
+USER root
+
+EXPOSE 8888
+WORKDIR $HOME
+
+ENTRYPOINT ["tini", "--"]
+CMD ["jupiter" "notebook" "--ip=0.0.0.0" "--allow-root"]
+
+RUN chown -R $NB_USER:users /etc/jupyter/
+
+# Install all OS dependencies for fully functional notebook server
+RUN apt-get update && apt-get install -yq --no-install-recommends \
+    build-essential \
+    emacs \
+    git \
+    inkscape \
+    jed \
+    libsm6 \
+    libxext-dev \
+    libxrender1 \
+    lmodern \
+    pandoc \
+    python-dev \
+    texlive-fonts-extra \
+    texlive-fonts-recommended \
+    texlive-generic-recommended \
+    texlive-latex-base \
+    texlive-latex-extra \
+    texlive-xetex \
+    vim \
+    unzip \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Switch back to jovyan to avoid accidental container runs as root
+USER $NB_USER
+
 
 USER root
 
