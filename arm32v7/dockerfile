@@ -55,7 +55,7 @@ ENV MINICONDA_VERSION 3.16.0
 RUN cd /tmp && \
     mkdir -p $CONDA_DIR && \
     wget --quiet https://repo.continuum.io/miniconda/Miniconda3-${MINICONDA_VERSION}-Linux-armv7l.sh && \
-    echo "4fb49180624952721628029097dcf1da *Miniconda3-${MINICONDA_VERSION}-Linux-armv7l.sh" | md5sum -c - && \
+    echo "a01cbe45755d576c2bb9833859cf9fd7 *Miniconda3-${MINICONDA_VERSION}-Linux-armv7l.sh" | md5sum -c - && \
     /bin/bash Miniconda3-${MINICONDA_VERSION}-Linux-armv7l.sh -f -b -p $CONDA_DIR && \
     rm Miniconda3-${MINICONDA_VERSION}-Linux-armv7l.sh && \
     $CONDA_DIR/bin/conda config --system --prepend channels conda-forge && \
